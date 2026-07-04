@@ -163,5 +163,8 @@ tail -f data/app.log
 
 Note the difference from Docker: here the app itself binds to the Tailscale IP
 (`HOST=100.x.y.z`), because there is no container port mapping in between. Backups work
-identically (same cron line). Update with `git pull && pnpm install && pnpm build &&
-launchctl kickstart -k gui/$(id -u)/nl.huisjeszoeken.app`.
+identically (same cron line). Update with `scripts/update.sh` — it pulls, installs
+(incl. the Playwright browser), builds the API **and** the dashboard (`pnpm web:build`;
+without it, Fastify keeps serving the old SPA from `src/web/dist`), and kickstarts the
+agent. If your LaunchAgent label differs from `nl.huisjeszoeken.app`, adjust `LABEL` in
+the script.
