@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import type { SessionAuth } from '../api/auth.js';
 import type { ListingLookup } from '../core/dedupe.js';
 import type { Listing } from '../core/types.js';
@@ -23,6 +23,12 @@ export const dbLookup: ListingLookup = {
 /** Insert a new listing; returns undefined when (source, external_id) already exists. */
 export function insertListing(listing: Listing): ListingRow | undefined {
   return db.insert(listings).values(listing).onConflictDoNothing().returning().get();
+}
+
+/** Listings first seen in the last `days` days (for the profile backfill). */
+export function getRecentListings(days: number): ListingRow[] {
+  const cutoff = new Date(Date.now() - days * 86_400_000);
+  return db.select().from(listings).where(gte(listings.firstSeenAt, cutoff)).all();
 }
 
 export function getActiveProfiles(): ProfileRow[] {

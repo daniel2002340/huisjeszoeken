@@ -284,4 +284,61 @@ describe('api server', () => {
       expect(res.json().error).toBe('validation failed');
     });
   });
+
+  describe('profile backfill (feed-only)', () => {
+    const matchesFor = async (profileId: number) => {
+      const res = await app.inject({ method: 'GET', url: '/api/matches', cookies: adminCookie });
+      return (res.json() as Array<{ profileId: number; emailedAt: string | null; listing: { url: string } }>).filter(
+        (m) => m.profileId === profileId,
+      );
+    };
+
+    it('a new profile gets recent matching listings, without emails', async () => {
+      // testListing postcode is 2611JK; only this profile targets 2611.
+      insertListing(testListing('backfill-recent'));
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/profiles',
+        cookies: adminCookie,
+        payload: profileInput('Backfill Bea', { maxPrice: 2000, postcodes: ['2611'] }),
+      });
+      expect(res.statusCode).toBe(201);
+
+      const items = await matchesFor(res.json().id);
+      expect(items.map((m) => m.listing.url)).toContain('https://example.com/backfill-recent');
+      expect(items.every((m) => m.emailedAt === null)).toBe(true);
+    });
+
+    it('a profile outside the filter gets nothing', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/profiles',
+        cookies: adminCookie,
+        payload: profileInput('Backfill Niks', { postcodes: ['9999'] }),
+      });
+      expect(await matchesFor(res.json().id)).toEqual([]);
+    });
+
+    it('widening a profile via PUT backfills the newly matching listings', async () => {
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/profiles',
+        cookies: adminCookie,
+        payload: profileInput('Backfill Later', { postcodes: ['9999'] }),
+      });
+      const id = created.json().id;
+      expect(await matchesFor(id)).toEqual([]);
+
+      const res = await app.inject({
+        method: 'PUT',
+        url: `/api/profiles/${id}`,
+        cookies: adminCookie,
+        payload: { ...(created.json() as Record<string, unknown>), postcodes: ['2611'] },
+      });
+      expect(res.statusCode).toBe(200);
+      const items = await matchesFor(id);
+      expect(items.map((m) => m.listing.url)).toContain('https://example.com/backfill-recent');
+      expect(items.every((m) => m.emailedAt === null)).toBe(true);
+    });
+  });
 });

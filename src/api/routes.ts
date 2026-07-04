@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { ZodError } from 'zod';
 import { renderApplicationLetter } from '../core/letter.js';
+import { matchesProfile } from '../core/matcher.js';
 import {
   createProfile,
   createSession,
@@ -17,7 +18,9 @@ import {
   getProfile,
   getProfileByUsername,
   getProfiles,
+  getRecentListings,
   getSessionAuth,
+  insertMatch,
   type ProfileRow,
   updateMatchStatus,
   updateProfile,
@@ -47,6 +50,21 @@ export interface ApiRoutesOptions {
 
 /** Password hash never leaves the API. */
 const toPublicProfile = ({ passwordHash: _hash, ...profile }: ProfileRow) => profile;
+
+/** How far back a new/edited profile is backfilled with existing listings. */
+const BACKFILL_DAYS = 7;
+
+/**
+ * Feed-only backfill: match recent listings for a created/updated profile so
+ * its dashboard doesn't start empty. No emails — emailed_at stays NULL and the
+ * scheduler never revisits stored listings, so these can't trigger alerts.
+ * Idempotent via UNIQUE(listing_id, profile_id); inactive profiles match nothing.
+ */
+function backfillMatches(profile: ProfileRow): void {
+  for (const listing of getRecentListings(BACKFILL_DAYS)) {
+    if (matchesProfile(listing, profile)) insertMatch(listing.id, profile.id);
+  }
+}
 
 /** What a logged-in friend (non-admin) may call: own identity + own matches. */
 const FRIEND_ROUTES = new Set([
@@ -131,6 +149,7 @@ export const apiRoutes: FastifyPluginAsync<ApiRoutesOptions> = async (app, opts)
       return reply.code(409).send({ error: 'username already in use' });
     }
     const created = createProfile({ ...input, passwordHash: password ? hashPassword(password) : null });
+    backfillMatches(created);
     return reply.code(201).send(toPublicProfile(created));
   });
 
@@ -149,6 +168,7 @@ export const apiRoutes: FastifyPluginAsync<ApiRoutesOptions> = async (app, opts)
     if (input.username === null || password) deleteSessionsForProfile(id);
     const updated = updateProfile(id, { ...input, passwordHash });
     if (!updated) return reply.code(404).send({ error: 'profile not found' });
+    backfillMatches(updated);
     return toPublicProfile(updated);
   });
 

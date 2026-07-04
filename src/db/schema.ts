@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text, unique, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import type { Furnished, PropertyType } from '../core/types.js';
 
 // Data model from PLAN.md §2.
 
@@ -18,8 +19,8 @@ export const listings = sqliteTable(
     priceEur: integer('price_eur'), // monthly, excl/incl unknown -> store as shown
     surfaceM2: integer('surface_m2'),
     bedrooms: integer('bedrooms'),
-    propertyType: text('property_type').notNull().default('unknown'), // 'apartment' | 'studio' | 'room' | 'house' | 'unknown'
-    furnished: text('furnished').notNull().default('unknown'), // 'furnished' | 'unfurnished' | 'shell' | 'unknown'
+    propertyType: text('property_type').notNull().default('unknown').$type<PropertyType>(),
+    furnished: text('furnished').notNull().default('unknown').$type<Furnished>(),
     agency: text('agency'),
     imageUrl: text('image_url'),
     firstSeenAt: integer('first_seen_at', { mode: 'timestamp' })
