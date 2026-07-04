@@ -12,8 +12,8 @@ export function Sparkline({ points, width = 260, height = 40 }: {
 
   return (
     <svg className="sparkline" width={width} height={height} role="img" aria-label="nieuwe woningen per dag">
-      <polyline points={coords.join(' ')} fill="none" stroke="#0a7d38" strokeWidth="2" strokeLinejoin="round" />
-      {points.length === 1 && <circle cx={0} cy={coords[0]?.split(',')[1]} r={3} fill="#0a7d38" />}
+      <polyline points={coords.join(' ')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      {points.length === 1 && <circle cx={0} cy={coords[0]?.split(',')[1]} r={3} fill="currentColor" />}
     </svg>
   );
 }

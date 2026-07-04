@@ -58,7 +58,8 @@ export function App() {
       <div className="shell">
         <header className="topbar">
           <h1>
-            🏠 huisjeszoeken <span>— Delft Rental Alert</span>
+            <span className="mark" aria-hidden="true">◆</span>
+            huisjeszoeken <span className="sub">Delft Rental Alert</span>
           </h1>
         </header>
         <LoginPage onLogin={setMe} />
@@ -74,7 +75,8 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <h1>
-          🏠 huisjeszoeken <span>— Delft Rental Alert</span>
+          <span className="mark" aria-hidden="true">◆</span>
+          huisjeszoeken <span className="sub">Delft Rental Alert</span>
         </h1>
         <nav className="tabs">
           {tabs.map((t) => (

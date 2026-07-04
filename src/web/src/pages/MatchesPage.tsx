@@ -61,10 +61,11 @@ export function MatchesPage() {
               <img alt="" />
             )}
             <div className="body">
-              <div className="title">
-                <a href={m.listing.url} target="_blank" rel="noreferrer">
-                  {formatEuro(m.listing.priceEur)} — {m.listing.addressRaw}
+              <div className="match-top">
+                <a className="match-addr" href={m.listing.url} target="_blank" rel="noreferrer">
+                  {m.listing.addressRaw}
                 </a>
+                <span className="match-price">{formatEuro(m.listing.priceEur)}</span>
               </div>
               <div className="muted">
                 {details && `${details} · `}
