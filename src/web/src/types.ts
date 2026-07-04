@@ -4,6 +4,7 @@ export interface Profile {
   id: number;
   name: string;
   emails: string[];
+  emailsEnabled: boolean;
   username: string | null;
   minPrice: number | null;
   maxPrice: number | null;

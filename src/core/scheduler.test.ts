@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { computeStartupPlan } from './scheduler.js';
+import { describe, expect, it, vi } from 'vitest';
+import { createProfile, getMatchesFeed } from '../db/repo.js';
+import { notifyMatch } from './notify.js';
+import { computeStartupPlan, runSourceOnce } from './scheduler.js';
+
+vi.mock('./notify.js', () => ({ notifyMatch: vi.fn(async () => {}) }));
 
 const NOW = new Date('2026-07-02T12:00:00Z');
 const minutesAgo = (min: number): Date => new Date(NOW.getTime() - min * 60_000);
@@ -64,5 +68,53 @@ describe('computeStartupPlan', () => {
   it('only counts the trailing streak, not older blocks', () => {
     const plan = computeStartupPlan([run(1, true), blocked(3), blocked(5)], 120, NOW);
     expect(plan.blockedStreak).toBe(0);
+  });
+});
+
+describe('runSourceOnce email toggle', () => {
+  it('records the match but skips the email when emailsEnabled is false', async () => {
+    // Postcode district no other test uses, so only these profiles match.
+    const base = {
+      emails: ['sched@example.com'],
+      minPrice: null,
+      maxPrice: null,
+      minBedrooms: null,
+      minSurfaceM2: null,
+      propertyTypes: [],
+      postcodes: ['2609'],
+      furnishedPref: 'any',
+      letterTemplate: 'Beste, {namen}',
+      letterVars: { namen: 'S' },
+      active: true,
+    };
+    const loud = createProfile({ ...base, name: 'Sched Loud' });
+    const quiet = createProfile({ ...base, name: 'Sched Quiet', emailsEnabled: false });
+
+    const stats = await runSourceOnce({
+      name: 'sched-test',
+      intervalSec: 60,
+      fetchLatest: async () => [
+        {
+          source: 'sched-test',
+          externalId: 'toggle-1',
+          url: 'https://example.com/toggle-1',
+          addressRaw: 'Testlaan 1, 2609 XX Delft',
+          priceEur: 1000,
+        },
+      ],
+    });
+    expect(stats.ok).toBe(true);
+    expect(stats.fresh).toBe(1);
+
+    const notified = vi.mocked(notifyMatch).mock.calls.map(([, profile]) => profile.name);
+    expect(notified).toContain('Sched Loud');
+    expect(notified).not.toContain('Sched Quiet');
+
+    // Both profiles matched; only the loud one was marked emailed.
+    const [loudMatch] = getMatchesFeed(10, loud.id);
+    const [quietMatch] = getMatchesFeed(10, quiet.id);
+    expect(loudMatch?.emailedAt).toBeInstanceOf(Date);
+    expect(quietMatch).toBeDefined();
+    expect(quietMatch?.emailedAt).toBeNull();
   });
 });

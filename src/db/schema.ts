@@ -37,6 +37,9 @@ export const profiles = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     name: text('name').notNull(), // e.g. "Anna & Tom"
     emails: text('emails', { mode: 'json' }).notNull().$type<string[]>(), // couple = 2 recipients
+    // Per-profile alert switch: false = matches are recorded (dashboard feed)
+    // but no email is sent — like DRY_RUN, scoped to one profile.
+    emailsEnabled: integer('emails_enabled', { mode: 'boolean' }).notNull().default(true),
     // Dashboard login (optional): profiles without a username get alerts but
     // cannot log in. NULL usernames don't collide in the unique index.
     username: text('username'),

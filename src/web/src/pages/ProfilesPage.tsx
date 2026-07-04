@@ -12,6 +12,7 @@ const PROPERTY_TYPES = [
 const EMPTY: ProfileInput = {
   name: '',
   emails: [],
+  emailsEnabled: true,
   username: null,
   minPrice: null,
   maxPrice: 1500,
@@ -61,6 +62,15 @@ export function ProfilesPage() {
     }
   };
 
+  const toggleEmails = async (p: Profile) => {
+    try {
+      await api.updateProfile(p.id, { ...p, emailsEnabled: !p.emailsEnabled });
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
   const remove = async (p: Profile) => {
     if (!window.confirm(`Profiel "${p.name}" en alle bijbehorende matches verwijderen?`)) return;
     try {
@@ -101,6 +111,7 @@ export function ProfilesPage() {
               <div className="profile-head">
                 <h3>
                   {p.name} <span className={`badge ${p.active ? '' : 'off'}`}>{p.active ? 'actief' : 'uit'}</span>
+                  {p.active && !p.emailsEnabled && <span className="badge off">e-mail uit</span>}
                 </h3>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="ghost" onClick={() => setEditing(p)}>
@@ -108,6 +119,9 @@ export function ProfilesPage() {
                   </button>
                   <button className="ghost" onClick={() => void toggleActive(p)}>
                     {p.active ? 'Deactiveren' : 'Activeren'}
+                  </button>
+                  <button className="ghost" onClick={() => void toggleEmails(p)}>
+                    {p.emailsEnabled ? 'E-mail uit' : 'E-mail aan'}
                   </button>
                   <button className="danger" onClick={() => void remove(p)}>
                     Verwijderen
@@ -252,6 +266,19 @@ function ProfileForm({
             <option value="unfurnished">gestoffeerd/kaal</option>
           </select>
         </label>
+        <div className="field">
+          E-mailalerts
+          <div className="checks">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.emailsEnabled}
+                onChange={(e) => set('emailsEnabled', e.target.checked)}
+              />
+              e-mail sturen bij nieuwe matches (uit = alleen in het dashboard)
+            </label>
+          </div>
+        </div>
         <div className="field">
           Woningtypes
           <div className="checks">

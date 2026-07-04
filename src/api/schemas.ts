@@ -5,6 +5,8 @@ import { z } from 'zod';
 export const profileInputSchema = z.object({
   name: z.string().min(1).max(100),
   emails: z.array(z.string().email()).min(1).max(10),
+  // false = feed-only: matches recorded, no alert emails (per-profile DRY_RUN).
+  emailsEnabled: z.boolean().default(true),
   // Dashboard login. Username null = no login for this profile. Password is
   // write-only: omitted/empty on update means "keep the current password".
   username: z

@@ -102,6 +102,8 @@ export async function runSourceOnce(adapter: SourceAdapter): Promise<RunStats> {
         if (!matchesProfile(listing, profile)) continue;
         const match = insertMatch(row.id, profile.id);
         if (!match) continue; // UNIQUE(listing_id, profile_id) guard
+        // Feed-only profile: the match shows up on the dashboard, no email.
+        if (!profile.emailsEnabled) continue;
 
         try {
           await notifyMatch(listing, profile);
