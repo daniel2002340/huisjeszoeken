@@ -1,11 +1,12 @@
 import * as cheerio from 'cheerio';
 import type { PropertyType, RawListing, SourceAdapter } from '../core/types.js';
-import { fetchHtml } from './http.js';
+import { fetchHtmlViaBrowser } from './browser-fetch.js';
 
 /**
  * Huislijn.nl — SOURCES.md #9. Vue app whose server-side results embed every
  * listing as a JSON blob in the :object attribute of hl-search-object-display
- * elements — parsed directly, no DOM scraping. No price filter in the URL;
+ * elements — parsed directly, no DOM scraping. Fetched via headed Chromium
+ * since Cloudflare challenges every plain HTTP client (see browser-fetch.ts). No price filter in the URL;
  * the matcher handles per-profile bounds. An aggregator: its deeplink fields
  * point to the original sources (huurwoningen.nl etc.), so expect overlap.
  * Tests parse fixtures/huislijn/ — never live sites in CI (CLAUDE.md).
@@ -107,6 +108,6 @@ export const huislijn: SourceAdapter = {
   name: 'huislijn',
   intervalSec: 180,
   async fetchLatest() {
-    return parseHuislijnHtml(await fetchHtml(LIST_URL));
+    return parseHuislijnHtml(await fetchHtmlViaBrowser(LIST_URL));
   },
 };

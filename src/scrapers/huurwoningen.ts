@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { PropertyType, RawListing, SourceAdapter } from '../core/types.js';
-import { fetchHtml } from './http.js';
+import { fetchHtmlViaBrowser } from './browser-fetch.js';
 import {
   cleanText,
   parseCardFeatures,
@@ -11,7 +11,9 @@ import {
 } from './listing-card.js';
 
 /**
- * Huurwoningen.nl — Delft city page sorted by newest, static HTML (PLAN.md §3).
+ * Huurwoningen.nl — Delft city page sorted by newest, server-rendered HTML
+ * fetched via headed Chromium — Cloudflare challenges every plain HTTP client
+ * (see browser-fetch.ts).
  * Same card markup family as Pararius, but: listing URLs carry no property
  * type (/huren/delft/<id>/<street>/), the type is the first word of the card
  * title, cards show no agency and NO house number (detail page only). Tests
@@ -85,6 +87,6 @@ export const huurwoningen: SourceAdapter = {
   name: 'huurwoningen',
   intervalSec: 150,
   async fetchLatest() {
-    return parseHuurwoningenHtml(await fetchHtml(LIST_URL));
+    return parseHuurwoningenHtml(await fetchHtmlViaBrowser(LIST_URL));
   },
 };

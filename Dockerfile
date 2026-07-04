@@ -1,7 +1,10 @@
 # syntax=docker/dockerfile:1
-# Slim Node image: all adapters use plain fetch (Funda blocks headless
-# browsers, so the Playwright base image was dead weight). Playwright lives in
-# devDependencies for local diagnostics (scripts/funda-explore.ts) only.
+# Slim Node image: playwright stays in devDependencies and out of this image.
+# Most adapters use plain fetch (Funda even blocks headless browsers). The
+# three Cloudflare-challenged sources (pararius, huurwoningen, huislijn) need
+# a HEADED Chromium (src/scrapers/browser-fetch.ts) — impossible in a
+# container without a display, so in Docker those three fail with a clear
+# error and back off; deploy bare metal for them (DEPLOY.md known issue).
 
 FROM node:22-slim AS base
 ENV PNPM_HOME=/pnpm

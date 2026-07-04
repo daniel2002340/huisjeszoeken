@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import type { PropertyType, RawListing, SourceAdapter } from '../core/types.js';
-import { fetchHtml } from './http.js';
+import { fetchHtmlViaBrowser } from './browser-fetch.js';
 import {
   cleanText,
   parseCardFeatures,
@@ -11,9 +11,11 @@ import {
 } from './listing-card.js';
 
 /**
- * Pararius — https://www.pararius.nl/huurwoningen/delft. Static HTML, cheerio
- * (PLAN.md §3). Page 1 only, Delft only. Tests parse fixtures/pararius/ —
- * never live sites in CI (CLAUDE.md).
+ * Pararius — https://www.pararius.nl/huurwoningen/delft. Server-rendered HTML,
+ * cheerio (PLAN.md §3), but fetched via headed Chromium since Cloudflare
+ * challenges every plain HTTP client (see browser-fetch.ts). Page 1 only,
+ * Delft only. Tests parse fixtures/pararius/ — never live sites in CI
+ * (CLAUDE.md).
  */
 
 const BASE_URL = 'https://www.pararius.nl';
@@ -81,6 +83,6 @@ export const pararius: SourceAdapter = {
   name: 'pararius',
   intervalSec: 120,
   async fetchLatest() {
-    return parseParariusHtml(await fetchHtml(LIST_URL));
+    return parseParariusHtml(await fetchHtmlViaBrowser(LIST_URL));
   },
 };

@@ -9,6 +9,17 @@ volume-mounted `./data`, dashboard reachable **only over the tailnet**.
 > deliberately do not spoof fingerprints (PLAN.md §9). After the first `docker compose
 > up`, check `docker compose logs app`: if every run fails with HTTP 403, deploy bare
 > metal via launchd instead (see the last section) — same code, no container.
+>
+> **⚠️ Known issue (observed 2026-07-04):** pararius, huurwoningen and huislijn now serve
+> a Cloudflare managed challenge (`cf-mitigated: challenge`) to *every* plain HTTP client,
+> on macOS too. These three adapters therefore fetch through a **headed** Chromium
+> (`src/scrapers/browser-fetch.ts`) — headless is detected and never clears the challenge.
+> Consequences: they only work on the bare-metal deploy (the container has no display and
+> no Playwright), and the Mini needs a logged-in GUI session for the browser window. In
+> Docker these three fail with a clear error and back off; all other sources are unaffected.
+> One-time setup for bare metal: `pnpm exec playwright install chromium`. The browser
+> profile lives in `data/browser-profile-cf` — never open it with a headless run
+> (see scripts/cf-explore.ts), that taints the session and Cloudflare re-challenges it.
 
 ## Prerequisites
 
@@ -107,6 +118,7 @@ nvm or Homebrew, then:
 ```sh
 cd ~/huisjeszoeken
 corepack enable && pnpm install && pnpm build
+pnpm exec playwright install chromium   # for the Cloudflare sources (headed browser)
 node dist/db/seed.js   # once, after editing the profiles in src/db/seed.ts
 ```
 
