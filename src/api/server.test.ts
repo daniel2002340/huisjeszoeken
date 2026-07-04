@@ -225,6 +225,7 @@ describe('api server', () => {
         ['GET', '/api/status'],
         ['POST', '/api/letter-preview'],
         ['DELETE', `/api/profiles/${otherId}`],
+        ['POST', `/api/profiles/${otherId}/test-email`],
       ] as const) {
         const res = await app.inject({
           method,
@@ -282,6 +283,37 @@ describe('api server', () => {
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toBe('validation failed');
+    });
+  });
+
+  describe('profile test email', () => {
+    it('sends the sample listing to the profile addresses (DRY_RUN in tests)', async () => {
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/profiles',
+        cookies: adminCookie,
+        payload: profileInput('Testmail', { emails: ['een@example.com', 'twee@example.com'] }),
+      });
+      expect(created.statusCode).toBe(201);
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/profiles/${created.json().id}/test-email`,
+        cookies: adminCookie,
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({
+        sent: ['een@example.com', 'twee@example.com'],
+        dryRun: true,
+      });
+    });
+
+    it('404s for an unknown profile', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/profiles/999999/test-email',
+        cookies: adminCookie,
+      });
+      expect(res.statusCode).toBe(404);
     });
   });
 

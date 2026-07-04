@@ -40,6 +40,8 @@ export function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [editing, setEditing] = useState<Profile | 'new' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<number | null>(null);
 
   const load = () => {
     api
@@ -71,6 +73,24 @@ export function ProfilesPage() {
     }
   };
 
+  const sendTestEmail = async (p: Profile) => {
+    setNotice(null);
+    setError(null);
+    setTestingId(p.id);
+    try {
+      const res = await api.testEmail(p.id);
+      setNotice(
+        res.dryRun
+          ? `Testmail voor "${p.name}" alleen gelogd — DRY_RUN staat aan, er is niets verstuurd.`
+          : `Testmail verstuurd naar ${res.sent.join(', ')}.`,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   const remove = async (p: Profile) => {
     if (!window.confirm(`Profiel "${p.name}" en alle bijbehorende matches verwijderen?`)) return;
     try {
@@ -87,6 +107,7 @@ export function ProfilesPage() {
   return (
     <>
       {error && <div className="error-banner">{error}</div>}
+      {notice && <div className="notice-banner">{notice}</div>}
       {editing !== null ? (
         <ProfileForm
           initial={editing === 'new' ? EMPTY : editing}
@@ -122,6 +143,13 @@ export function ProfilesPage() {
                   </button>
                   <button className="ghost" onClick={() => void toggleEmails(p)}>
                     {p.emailsEnabled ? 'E-mail uit' : 'E-mail aan'}
+                  </button>
+                  <button
+                    className="ghost"
+                    disabled={testingId !== null}
+                    onClick={() => void sendTestEmail(p)}
+                  >
+                    {testingId === p.id ? 'Versturen…' : 'Test e-mail'}
                   </button>
                   <button className="danger" onClick={() => void remove(p)}>
                     Verwijderen

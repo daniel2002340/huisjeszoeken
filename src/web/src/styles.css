@@ -102,6 +102,10 @@ h3 { font-size: 16px; margin: 0 0 8px; }
   background: var(--rust-wash); color: var(--rust);
   padding: 10px 14px; border-radius: var(--radius); margin-bottom: 16px;
 }
+.notice-banner {
+  background: var(--cobalt-wash); color: var(--cobalt-deep);
+  padding: 10px 14px; border-radius: var(--radius); margin-bottom: 16px;
+}
 
 /* --- buttons --------------------------------------------------------------- */
 button.primary, button.ghost, button.danger {

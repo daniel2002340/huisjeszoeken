@@ -1,7 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { ZodError } from 'zod';
+import { config } from '../core/config.js';
 import { renderApplicationLetter } from '../core/letter.js';
 import { matchesProfile } from '../core/matcher.js';
+import { composeMatchEmail, sendEmail } from '../core/notify.js';
 import {
   createProfile,
   createSession,
@@ -176,6 +178,25 @@ export const apiRoutes: FastifyPluginAsync<ApiRoutesOptions> = async (app, opts)
     const { id } = idParamSchema.parse(req.params);
     if (!deleteProfile(id)) return reply.code(404).send({ error: 'profile not found' });
     return { deleted: id };
+  });
+
+  // Test alert to the profile's addresses: the sample listing through the real
+  // compose path (incl. the profile's letter template), so what arrives is
+  // exactly what a real alert will look like. Goes through sendEmail, so
+  // DRY_RUN=true logs instead of sending (CLAUDE.md hard rule).
+  app.post('/profiles/:id/test-email', async (req, reply) => {
+    const { id } = idParamSchema.parse(req.params);
+    const profile = getProfile(id);
+    if (!profile) return reply.code(404).send({ error: 'profile not found' });
+    const email = composeMatchEmail(SAMPLE_LISTING, profile);
+    try {
+      await sendEmail({ ...email, subject: `[TEST] ${email.subject}` });
+    } catch (error) {
+      app.log.error(error);
+      const message = error instanceof Error ? error.message : String(error);
+      return reply.code(502).send({ error: `sending failed: ${message}` });
+    }
+    return { sent: profile.emails, dryRun: config.DRY_RUN };
   });
 
   // --- Letter template live preview (against the sample listing) ----------

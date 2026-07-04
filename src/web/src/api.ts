@@ -34,6 +34,10 @@ export const api = {
     request<Profile>(`/api/profiles/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   deleteProfile: (id: number) =>
     request<{ deleted: number }>(`/api/profiles/${id}`, { method: 'DELETE' }),
+  testEmail: (id: number) =>
+    request<{ sent: string[]; dryRun: boolean }>(`/api/profiles/${id}/test-email`, {
+      method: 'POST',
+    }),
   letterPreview: (letterTemplate: string, letterVars: Record<string, string>) =>
     request<LetterPreviewResponse>('/api/letter-preview', {
       method: 'POST',
