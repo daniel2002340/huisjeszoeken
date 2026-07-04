@@ -10,6 +10,7 @@ export interface Profile {
   minBedrooms: number | null;
   minSurfaceM2: number | null;
   propertyTypes: string[];
+  postcodes: string[];
   furnishedPref: string;
   letterTemplate: string;
   letterVars: Record<string, string>;

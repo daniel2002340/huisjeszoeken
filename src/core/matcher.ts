@@ -14,12 +14,13 @@ export interface MatchProfile {
   minBedrooms: number | null;
   minSurfaceM2: number | null;
   propertyTypes: string[];
+  postcodes: string[]; // 4-digit districts, e.g. ["2611","2612"]; empty = anywhere
   furnishedPref: string; // 'any' | 'furnished' | 'unfurnished'
 }
 
 export type MatchableListing = Pick<
   Listing,
-  'priceEur' | 'bedrooms' | 'surfaceM2' | 'propertyType' | 'furnished'
+  'priceEur' | 'bedrooms' | 'surfaceM2' | 'propertyType' | 'furnished' | 'postcode'
 >;
 
 export function matchesProfile(listing: MatchableListing, profile: MatchProfile): boolean {
@@ -52,6 +53,13 @@ export function matchesProfile(listing: MatchableListing, profile: MatchProfile)
     !profile.propertyTypes.includes(listing.propertyType)
   ) {
     return false;
+  }
+
+  if (listing.postcode !== null && profile.postcodes.length > 0) {
+    // Listing postcodes are normalized to "2611 JK"; profiles store 4-digit
+    // districts. A listing without a parsed postcode passes (over-send).
+    const district = listing.postcode.slice(0, 4);
+    if (!profile.postcodes.includes(district)) return false;
   }
 
   if (listing.furnished !== 'unknown' && profile.furnishedPref !== 'any') {

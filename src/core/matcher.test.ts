@@ -8,6 +8,7 @@ const profile = (overrides: Partial<MatchProfile> = {}): MatchProfile => ({
   minBedrooms: null,
   minSurfaceM2: null,
   propertyTypes: ['apartment', 'studio'],
+  postcodes: [],
   furnishedPref: 'any',
   ...overrides,
 });
@@ -18,6 +19,7 @@ const listing = (overrides: Partial<MatchableListing> = {}): MatchableListing =>
   surfaceM2: 60,
   propertyType: 'apartment',
   furnished: 'furnished',
+  postcode: '2611 JK',
   ...overrides,
 });
 
@@ -82,6 +84,27 @@ describe('matchesProfile', () => {
     });
   });
 
+  describe('postcode districts', () => {
+    const p = profile({ postcodes: ['2611', '2628'] });
+
+    it('accepts a listing whose 4-digit district is in the list', () => {
+      expect(matchesProfile(listing({ postcode: '2611 JK' }), p)).toBe(true);
+      expect(matchesProfile(listing({ postcode: '2628 CD' }), p)).toBe(true);
+    });
+
+    it('rejects a district outside the list', () => {
+      expect(matchesProfile(listing({ postcode: '2624 AB' }), p)).toBe(false);
+    });
+
+    it('unknown postcode passes (over-send)', () => {
+      expect(matchesProfile(listing({ postcode: null }), p)).toBe(true);
+    });
+
+    it('an empty postcode list passes everything', () => {
+      expect(matchesProfile(listing({ postcode: '2624 AB' }), profile())).toBe(true);
+    });
+  });
+
   describe('furnished preference', () => {
     it("pref 'furnished' rejects unfurnished and shell, accepts unknown", () => {
       const p = profile({ furnishedPref: 'furnished' });
@@ -112,11 +135,17 @@ describe('matchesProfile', () => {
       surfaceM2: null,
       propertyType: 'unknown',
       furnished: 'unknown',
+      postcode: null,
     });
     expect(
       matchesProfile(
         unknownListing,
-        profile({ minBedrooms: 3, minSurfaceM2: 80, furnishedPref: 'furnished' }),
+        profile({
+          minBedrooms: 3,
+          minSurfaceM2: 80,
+          furnishedPref: 'furnished',
+          postcodes: ['2611'],
+        }),
       ),
     ).toBe(true);
   });

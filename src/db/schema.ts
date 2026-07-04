@@ -45,6 +45,8 @@ export const profiles = sqliteTable(
     minBedrooms: integer('min_bedrooms'),
     minSurfaceM2: integer('min_surface_m2'),
     propertyTypes: text('property_types', { mode: 'json' }).notNull().$type<string[]>(), // ["apartment","studio","room"]
+    // 4-digit postcode districts, e.g. ["2611","2612"]; empty = whole city.
+    postcodes: text('postcodes', { mode: 'json' }).notNull().$type<string[]>().default(sql`'[]'`),
     furnishedPref: text('furnished_pref').notNull().default('any'), // 'any' | 'furnished' | 'unfurnished'
     letterTemplate: text('letter_template').notNull(), // with {placeholders}
     letterVars: text('letter_vars', { mode: 'json' }).notNull().$type<Record<string, string>>(),

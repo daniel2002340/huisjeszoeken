@@ -1,0 +1,1 @@
+ALTER TABLE `profiles` ADD `postcodes` text DEFAULT '[]' NOT NULL;

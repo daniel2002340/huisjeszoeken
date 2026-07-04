@@ -18,6 +18,7 @@ const EMPTY: ProfileInput = {
   minBedrooms: null,
   minSurfaceM2: null,
   propertyTypes: ['apartment', 'studio'],
+  postcodes: [],
   furnishedPref: 'any',
   letterTemplate: `Geachte {makelaar_of_verhuurder},
 
@@ -115,7 +116,8 @@ export function ProfilesPage() {
               </div>
               <div className="muted">
                 {formatEuro(p.minPrice ?? 0)}–{formatEuro(p.maxPrice)} ·{' '}
-                {p.propertyTypes.join(', ') || 'alle types'} · {p.furnishedPref} ·{' '}
+                {p.propertyTypes.join(', ') || 'alle types'} ·{' '}
+                {p.postcodes.join(', ') || 'heel Delft'} · {p.furnishedPref} ·{' '}
                 {p.emails.join(', ')}
                 {p.username && ` · login: ${p.username}`}
               </div>
@@ -138,6 +140,7 @@ function ProfileForm({
 }) {
   const [form, setForm] = useState<ProfileInput>({ ...initial, letterVars: { ...initial.letterVars } });
   const [emailsText, setEmailsText] = useState(initial.emails.join(', '));
+  const [postcodesText, setPostcodesText] = useState(initial.postcodes.join(' '));
   const [preview, setPreview] = useState('');
   const [sampleNote, setSampleNote] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -172,9 +175,10 @@ function ProfileForm({
         .split(/[,;\s]+/)
         .map((e) => e.trim())
         .filter(Boolean);
+      const postcodes = [...new Set(postcodesText.split(/[,;\s]+/).filter(Boolean))];
       // Empty password means "keep the current one" — don't send it at all.
       const { password, ...rest } = form;
-      await save({ ...rest, emails, ...(password ? { password } : {}) });
+      await save({ ...rest, emails, postcodes, ...(password ? { password } : {}) });
       onDone(true);
     } catch (e) {
       setError((e as Error).message);
@@ -231,6 +235,15 @@ function ProfileForm({
         {numField('Max. huur (€)', 'maxPrice')}
         {numField('Min. slaapkamers', 'minBedrooms')}
         {numField('Min. oppervlakte (m²)', 'minSurfaceM2')}
+        <label className="field">
+          Postcodegebieden (leeg = heel Delft)
+          <input
+            type="text"
+            placeholder="bv. 2611 2612 2613 2628"
+            value={postcodesText}
+            onChange={(e) => setPostcodesText(e.target.value)}
+          />
+        </label>
         <label className="field">
           Interieur
           <select value={form.furnishedPref} onChange={(e) => set('furnishedPref', e.target.value)}>

@@ -21,6 +21,11 @@ export const profileInputSchema = z.object({
   minBedrooms: z.number().int().nonnegative().nullable().default(null),
   minSurfaceM2: z.number().int().positive().nullable().default(null),
   propertyTypes: z.array(z.enum(['apartment', 'studio', 'room', 'house'])).default([]),
+  // 4-digit postcode districts (e.g. "2611"); empty = whole city.
+  postcodes: z
+    .array(z.string().trim().regex(/^\d{4}$/, 'postcode: 4 cijfers, bv. 2611'))
+    .max(50)
+    .default([]),
   furnishedPref: z.enum(['any', 'furnished', 'unfurnished']).default('any'),
   letterTemplate: z.string().min(1),
   letterVars: z.record(z.string()),
