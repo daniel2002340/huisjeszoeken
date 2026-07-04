@@ -1,0 +1,24 @@
+/tmp
+/out-tsc
+
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/.pnp
+.pnp.js
+
+.vscode/*
+
+# build output
+/dist
+/src/web/dist
+
+# SQLite database + logs (PLAN.md §7 / CLAUDE.md)
+/data
+
+# local environment (SMTP credentials) — .env.example is the template
+.env
+.env.local
+
+.DS_Store
