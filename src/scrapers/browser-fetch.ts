@@ -1,3 +1,4 @@
+import { rm } from 'node:fs/promises';
 import type { BrowserContext, Page } from 'playwright';
 import { HttpStatusError } from './http.js';
 
@@ -92,9 +93,27 @@ async function fetchOnce(url: string): Promise<string> {
     }
     await page.waitForTimeout(CHALLENGE_POLL_MS);
   }
-  // Still challenged: report it as a 403 so the scheduler's backoff ladder
-  // (5 min -> 30 min -> 2 h) applies exactly as for plain-fetch blocks.
+  // Still challenged: Cloudflare has flagged this SESSION, not the machine —
+  // observed in production (2026-07-04): after hours of polling the profile
+  // gets served a challenge that never auto-clears, while a fresh profile
+  // passes instantly. Self-heal by discarding the profile so the next run
+  // (after backoff) starts clean, and report a 403 so the scheduler's
+  // backoff ladder (5 min -> 30 min -> 2 h) applies as usual.
+  console.warn(`[browser-fetch] challenge did not clear for ${url} — resetting browser profile`);
+  await resetProfile();
   throw new HttpStatusError(403, url);
+}
+
+/** Close the browser and delete the (flagged) profile for a clean session. */
+async function resetProfile(): Promise<void> {
+  const current = contextPromise;
+  contextPromise = null;
+  try {
+    await (await current)?.close();
+  } catch {
+    // already dead — only the on-disk profile matters now
+  }
+  await rm(PROFILE_DIR, { recursive: true, force: true });
 }
 
 // Serialize all navigations through the single shared page (PLAN.md §3).

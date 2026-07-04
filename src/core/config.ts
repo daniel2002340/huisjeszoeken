@@ -25,8 +25,12 @@ const envSchema = z.object({
   // Per-source poll intervals in seconds (PLAN.md §3: 60-180, ±20% jitter
   // applied by the scheduler). Aggregators whose listings are near-pure
   // duplicates of primary sources poll relaxed (600s).
-  POLL_INTERVAL_PARARIUS_SEC: z.coerce.number().int().min(60).default(120),
-  POLL_INTERVAL_HUURWONINGEN_SEC: z.coerce.number().int().min(60).default(150),
+  // Cloudflare-challenged trio (browser-fetch.ts): a headed navigation every
+  // 2-3 min got the browser session flagged in production — poll these
+  // relaxed (300s) to stay under the radar.
+  POLL_INTERVAL_PARARIUS_SEC: z.coerce.number().int().min(60).default(300),
+  POLL_INTERVAL_HUURWONINGEN_SEC: z.coerce.number().int().min(60).default(300),
+  POLL_INTERVAL_HUISLIJN_SEC: z.coerce.number().int().min(60).default(300),
   POLL_INTERVAL_FUNDA_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_HUURE_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_APPARTEMENTDELFT_SEC: z.coerce.number().int().min(60).default(180),
@@ -35,7 +39,6 @@ const envSchema = z.object({
   POLL_INTERVAL_IKWILHUREN_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_HUURWONINGPORTAAL_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_RENTFINDER_SEC: z.coerce.number().int().min(60).default(180),
-  POLL_INTERVAL_HUISLIJN_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_HUIZENVINDER_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_RENT_SEC: z.coerce.number().int().min(60).default(180),
   POLL_INTERVAL_DIRECTWONEN_SEC: z.coerce.number().int().min(60).default(180),
