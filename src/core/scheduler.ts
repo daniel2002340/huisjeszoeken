@@ -24,6 +24,11 @@ import type { SourceAdapter } from './types.js';
 const BACKOFF_LADDER_MS = [5 * 60_000, 30 * 60_000, 2 * 60 * 60_000] as const;
 const JITTER = 0.2; // ±20%
 
+/** Pause before each detail-page (enrich) request — same-host etiquette. */
+const ENRICH_DELAY_MS = 1_000;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 const jitteredDelayMs = (intervalSec: number): number =>
   intervalSec * 1000 * (1 - JITTER + Math.random() * 2 * JITTER);
 
@@ -93,6 +98,27 @@ export async function runSourceOnce(adapter: SourceAdapter): Promise<RunStats> {
       }
 
       if (checkDuplicate(listing, dbLookup).isDuplicate) continue;
+
+      // New listing: give the adapter one shot at the detail page for the
+      // fields the card lacks (full address -> postcode filter + cross-source
+      // dedupe). Never fatal — on any failure the card-level data stands.
+      if (adapter.enrich) {
+        await sleep(ENRICH_DELAY_MS * (1 - JITTER + Math.random() * 2 * JITTER));
+        try {
+          const extra = await adapter.enrich(raw);
+          if (extra) {
+            listing = normalize({ ...raw, ...extra });
+            // The full address can reveal this is a listing we already have
+            // from another source — that was the point of fetching it.
+            if (checkDuplicate(listing, dbLookup).isDuplicate) continue;
+          }
+        } catch (error) {
+          console.warn(
+            `[${adapter.name}] enrich failed for ${raw.url} — using card data:`,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      }
 
       const row = insertListing(listing);
       if (!row) continue; // insert race: another run already stored it

@@ -1,5 +1,7 @@
+import { parseAddress } from '../core/normalize.js';
 import type { PropertyType, RawListing, SourceAdapter } from '../core/types.js';
 import { fetchHtml } from './http.js';
+import { lookupPostcode } from './pdok.js';
 
 /**
  * Buurtje.nl — SOURCES.md #14. The /kaart/ page is a JS map; the data comes
@@ -55,7 +57,10 @@ interface BuurtjeProps {
 function toRawListing(props: BuurtjeProps): RawListing | null {
   if (!props.uk) return null;
   const street = (props.str ?? '').trim();
-  const nr = (props.nr ?? '').trim();
+  // The API serializes an unknown house number as the literal string "NAN"
+  // (~half the features) — treat anything without a digit as absent.
+  const rawNr = (props.nr ?? '').trim();
+  const nr = /\d/.test(rawNr) ? rawNr : '';
 
   return {
     source: 'buurtje',
@@ -109,5 +114,14 @@ export const buurtje: SourceAdapter = {
   intervalSec: 180,
   async fetchLatest() {
     return parseBuurtjeJson(await fetchHtml(API_URL, API_HEADERS));
+  },
+  // Cards have full street + house number but NO postcode, and the detail
+  // page has none either (only lat/lng; its JSON-LD address is the company
+  // HQ in Dalfsen). PDOK resolves the address to a postcode instead.
+  async enrich(raw) {
+    const { street, houseNo } = parseAddress(raw.addressRaw);
+    if (!street || !houseNo) return null;
+    const postcode = await lookupPostcode(street, houseNo, raw.city ?? 'Delft');
+    return postcode ? { postcode } : null;
   },
 };

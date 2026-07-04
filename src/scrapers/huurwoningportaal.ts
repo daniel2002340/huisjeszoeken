@@ -94,10 +94,21 @@ export function parseHuurwoningportaalHtml(html: string): RawListing[] {
   return listings;
 }
 
+/** Detail page address line, e.g. "Martinus Nijhofflaan, 2624 ES Delft" —
+ * still no house number, but the postcode makes the district filter work. */
+export function parseHuurwoningportaalDetail(html: string): string | null {
+  const $ = cheerio.load(html);
+  return cleanText($('.address-line').first().text()) || null;
+}
+
 export const huurwoningportaal: SourceAdapter = {
   name: 'huurwoningportaal',
   intervalSec: 180,
   async fetchLatest() {
     return parseHuurwoningportaalHtml(await fetchHtml(LIST_URL));
+  },
+  async enrich(raw) {
+    const addressRaw = parseHuurwoningportaalDetail(await fetchHtml(raw.url));
+    return addressRaw ? { addressRaw } : null;
   },
 };

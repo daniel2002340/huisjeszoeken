@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { normalize } from '../core/normalize.js';
-import { parseHuurwoningportaalHtml } from './huurwoningportaal.js';
+import { parseHuurwoningportaalDetail, parseHuurwoningportaalHtml } from './huurwoningportaal.js';
 
 const fixture = readFileSync('fixtures/huurwoningportaal/latest.html', 'utf8');
 
@@ -80,5 +80,16 @@ describe('parseHuurwoningportaalHtml (robustness)', () => {
       bedrooms: 0, // 1 kamer -> 0 separate bedrooms
       propertyType: 'studio',
     });
+  });
+});
+
+describe('parseHuurwoningportaalDetail (fixture)', () => {
+  it('extracts the address line incl. postcode from the detail page', () => {
+    const html = readFileSync('fixtures/huurwoningportaal/detail.html', 'utf8');
+    expect(parseHuurwoningportaalDetail(html)).toBe('Martinus Nijhofflaan, 2624 ES Delft');
+  });
+
+  it('returns null when the address element is missing', () => {
+    expect(parseHuurwoningportaalDetail('<html><body>niets</body></html>')).toBeNull();
   });
 });

@@ -15,6 +15,13 @@ export const rawListingSchema = z.object({
   externalId: z.string().min(1),
   url: z.string().url(),
   addressRaw: z.string().min(1),
+  /** Explicit postcode when the source provides one the address line lacks;
+   * a bare 4-digit district ("2624") is allowed and matchable. */
+  postcode: z
+    .string()
+    .regex(/^\d{4}(\s?[A-Za-z]{2})?$/)
+    .nullable()
+    .optional(),
   priceEur: z.number().int().positive().nullable(),
   surfaceM2: z.number().int().positive().nullable().optional(),
   bedrooms: z.number().int().nonnegative().nullable().optional(),
@@ -54,4 +61,13 @@ export interface SourceAdapter {
   intervalSec: number;
   /** Page 1 only, pre-filtered to Delft, sorted newest-first. */
   fetchLatest(): Promise<RawListing[]>;
+  /**
+   * Optional detail-page fetch, called by the scheduler ONLY for listings
+   * that passed dedupe (i.e. once per listing, ever) to fill in what the
+   * card lacks — typically the full address for postcode matching and
+   * cross-source dedupe. Returns fields to merge into the raw listing, or
+   * null when the detail page had nothing better. Errors are logged and the
+   * card-level data is used as-is (over-send, never drop).
+   */
+  enrich?(raw: RawListing): Promise<Partial<RawListing> | null>;
 }

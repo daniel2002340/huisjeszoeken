@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type { CheerioAPI } from 'cheerio';
 import type { PropertyType, RawListing, SourceAdapter } from '../core/types.js';
 import { fetchHtml } from './http.js';
+import { extractJsonLdPostcode } from './listing-detail.js';
 import { cleanText, parseInteger, type Selection } from './listing-card.js';
 
 /**
@@ -97,5 +98,11 @@ export const huurstunt: SourceAdapter = {
   intervalSec: 600, // aggregator, near-pure duplicates — poll relaxed
   async fetchLatest() {
     return parseHuurstuntHtml(await fetchHtml(LIST_URL));
+  },
+  // Cards show street only; the detail page's JSON-LD carries the postcode
+  // (locality-filtered: the page also embeds teasers from other towns).
+  async enrich(raw) {
+    const postcode = extractJsonLdPostcode(await fetchHtml(raw.url), raw.city ?? 'Delft');
+    return postcode ? { postcode } : null;
   },
 };

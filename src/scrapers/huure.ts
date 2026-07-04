@@ -58,6 +58,9 @@ function parseCard($: CheerioAPI, $card: Selection): RawListing | null {
     externalId,
     url: new URL(href, BASE_URL).toString(),
     addressRaw,
+    // District-only, but enough for the matcher's postcode filter — the
+    // "(2624)" embedded in addressRaw is not parseable as a postcode.
+    postcode: districtPc,
     priceEur: parseInteger(cleanText($card.find('.property-price').first().text())),
     surfaceM2,
     // Total rooms shown; Dutch convention counts the living room.

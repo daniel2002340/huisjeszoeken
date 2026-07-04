@@ -123,6 +123,10 @@ interface SourceAdapter {
   name: string;
   intervalSec: number;          // 60–180 with ±20% jitter
   fetchLatest(): Promise<RawListing[]>;  // page 1, sorted by newest, Delft only
+  // Optional: called once per NEW listing (after dedupe) to fill in what the
+  // card lacks — typically the full address, for the postcode filter (§4) and
+  // cross-source dedupe (§2). Failure = keep card data (over-send, never drop).
+  enrich?(raw: RawListing): Promise<Partial<RawListing> | null>;
 }
 ```
 
@@ -130,6 +134,8 @@ Etiquette / robustness rules (apply to all adapters):
 - Only fetch the first results page, pre-filtered to Delft, sorted newest-first.
 - Randomized realistic User-Agent per session; keep cookies between polls.
 - Jittered intervals; never parallel-hammer one source.
+- Detail-page (enrich) requests only for listings never seen before — at most one
+  per listing ever, with a jittered ~1 s pause before each.
 - On HTTP 403/429: exponential backoff (5 min → 30 min → 2 h) and log to `scrape_runs`.
 - Parser failures (site redesign) must alert the admin (see §6), not crash the loop.
 

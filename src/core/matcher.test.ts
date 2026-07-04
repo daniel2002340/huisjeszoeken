@@ -96,6 +96,11 @@ describe('matchesProfile', () => {
       expect(matchesProfile(listing({ postcode: '2624 AB' }), p)).toBe(false);
     });
 
+    it('matches on a district-only postcode (huure cards)', () => {
+      expect(matchesProfile(listing({ postcode: '2611' }), p)).toBe(true);
+      expect(matchesProfile(listing({ postcode: '2624' }), p)).toBe(false);
+    });
+
     it('unknown postcode passes (over-send)', () => {
       expect(matchesProfile(listing({ postcode: null }), p)).toBe(true);
     });

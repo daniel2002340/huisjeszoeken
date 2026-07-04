@@ -107,4 +107,25 @@ describe('normalize', () => {
   it('rejects invalid scraped input', () => {
     expect(() => normalize(raw({ url: 'not-a-url' }))).toThrow();
   });
+
+  it('keeps an adapter-supplied district-only postcode (huure)', () => {
+    const listing = normalize(
+      raw({ addressRaw: '2 kamer appartement in Delft (2624), Delft', postcode: '2624' }),
+    );
+    expect(listing.postcode).toBe('2624');
+  });
+
+  it('formats an adapter-supplied full postcode', () => {
+    const listing = normalize(raw({ addressRaw: 'Ergens, Delft', postcode: '2612hr' }));
+    expect(listing.postcode).toBe('2612 HR');
+  });
+
+  it('prefers the postcode parsed from the address line over the explicit one', () => {
+    const listing = normalize(raw({ postcode: '9999' })); // addressRaw has 2611 JK
+    expect(listing.postcode).toBe('2611 JK');
+  });
+
+  it('rejects a malformed explicit postcode', () => {
+    expect(() => normalize(raw({ postcode: '26' }))).toThrow();
+  });
 });

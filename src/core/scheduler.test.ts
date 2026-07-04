@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createProfile, getMatchesFeed } from '../db/repo.js';
+import { createProfile, getMatchesFeed, insertListing } from '../db/repo.js';
+import { normalize } from './normalize.js';
 import { notifyMatch } from './notify.js';
 import { computeStartupPlan, runSourceOnce } from './scheduler.js';
 
@@ -116,5 +117,71 @@ describe('runSourceOnce email toggle', () => {
     expect(loudMatch?.emailedAt).toBeInstanceOf(Date);
     expect(quietMatch).toBeDefined();
     expect(quietMatch?.emailedAt).toBeNull();
+  });
+});
+
+describe('runSourceOnce enrich', () => {
+  const rawCard = (source: string, id: string, addressRaw: string) => ({
+    source,
+    externalId: id,
+    url: `https://example.com/${source}/${id}`,
+    addressRaw,
+    priceEur: 1200,
+  });
+
+  it('applies enrich fields before matching, so the postcode filter can act', async () => {
+    // Without enrichment the card has NO postcode -> over-send would match
+    // this profile. The enriched postcode is outside its district, so a
+    // missing match proves the enriched listing reached the matcher.
+    const profile = createProfile({
+      name: 'Enrich PC',
+      emails: ['enrich@example.com'],
+      minPrice: null,
+      maxPrice: null,
+      minBedrooms: null,
+      minSurfaceM2: null,
+      propertyTypes: [],
+      postcodes: ['2608'],
+      furnishedPref: 'any',
+      letterTemplate: 'Beste, {namen}',
+      letterVars: { namen: 'E' },
+      active: true,
+    });
+
+    const stats = await runSourceOnce({
+      name: 'enrich-a',
+      intervalSec: 60,
+      fetchLatest: async () => [rawCard('enrich-a', 'a1', 'Enrichstraat 1, Delft')],
+      enrich: async () => ({ postcode: '2607 ZZ' }),
+    });
+    expect(stats).toMatchObject({ ok: true, fresh: 1 });
+    expect(getMatchesFeed(10, profile.id)).toHaveLength(0);
+  });
+
+  it('skips the listing when enrichment reveals a cross-source duplicate', async () => {
+    insertListing(
+      normalize(rawCard('enrich-seed', 's1', 'Dubbelstraat 7, 2608 AB Delft')),
+    );
+    const stats = await runSourceOnce({
+      name: 'enrich-b',
+      intervalSec: 60,
+      // Card address is unparseable -> unique dedupe key, would insert as-is.
+      fetchLatest: async () => [rawCard('enrich-b', 'b1', 'Onbekend, Delft')],
+      // Full address matches the seeded listing -> same cross-source key.
+      enrich: async () => ({ addressRaw: 'Dubbelstraat 7, 2608 AB Delft' }),
+    });
+    expect(stats).toMatchObject({ ok: true, fresh: 0 });
+  });
+
+  it('falls back to the card data when enrich fails', async () => {
+    const stats = await runSourceOnce({
+      name: 'enrich-c',
+      intervalSec: 60,
+      fetchLatest: async () => [rawCard('enrich-c', 'c1', 'Terugvalstraat 3, Delft')],
+      enrich: async () => {
+        throw new Error('detail page 500');
+      },
+    });
+    expect(stats).toMatchObject({ ok: true, fresh: 1 });
   });
 });

@@ -23,6 +23,8 @@ describe('parseBuurtjeJson (fixture)', () => {
     for (const listing of listings) {
       expect(listing.priceEur, listing.externalId).toBeGreaterThan(100);
       expect(listing.addressRaw, listing.externalId).toMatch(/, Delft$/);
+      // The API's literal "NAN" house number must never leak into addresses.
+      expect(listing.addressRaw, listing.externalId).not.toMatch(/NAN/);
       expect(listing.url, listing.externalId).toMatch(/^https:\/\/buurtje\.nl\/.+/);
     }
   });

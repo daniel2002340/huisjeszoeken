@@ -83,6 +83,12 @@ export function buildDedupeKey(
   return `u-${slug(source)}-${slug(externalId)}`;
 }
 
+/** "2611jk" -> "2611 JK"; a bare district ("2624") stays as-is. */
+function formatExplicitPostcode(value: string): string {
+  const match = value.match(/^(\d{4})\s?([A-Za-z]{2})$/);
+  return match ? `${match[1]} ${match[2]!.toUpperCase()}` : value;
+}
+
 /** Validate scraped input and normalize it into a Listing ready for dedupe + insert. */
 export function normalize(raw: RawListing): Listing {
   const validated = rawListingSchema.parse(raw);
@@ -95,7 +101,9 @@ export function normalize(raw: RawListing): Listing {
     addressRaw: validated.addressRaw,
     street: parsed.street,
     houseNo: parsed.houseNo,
-    postcode: parsed.postcode,
+    // The address line wins when it has a full postcode; an adapter-supplied
+    // one (possibly district-only, e.g. huure) fills the gap otherwise.
+    postcode: parsed.postcode ?? (validated.postcode ? formatExplicitPostcode(validated.postcode) : null),
     city: validated.city ?? parsed.city ?? null,
     priceEur: validated.priceEur,
     surfaceM2: validated.surfaceM2 ?? null,

@@ -1,0 +1,27 @@
+{
+  "response":{
+    "numFound":93137,
+    "start":0,
+    "maxScore":15.446239,
+    "numFoundExact":true,
+    "docs":[{
+      "type":"adres",
+      "woonplaatsnaam":"Delft",
+      "postcode":"2624BC",
+      "huisnummer":77,
+      "straatnaam":"Mercuriusweg"
+    },{
+      "type":"adres",
+      "woonplaatsnaam":"Delft",
+      "postcode":"2624BC",
+      "huisnummer":1,
+      "straatnaam":"Mercuriusweg"
+    },{
+      "type":"adres",
+      "woonplaatsnaam":"Delft",
+      "postcode":"2624BC",
+      "huisnummer":2,
+      "straatnaam":"Mercuriusweg"
+    }]
+  }
+}

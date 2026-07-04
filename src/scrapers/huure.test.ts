@@ -32,6 +32,7 @@ describe('parseHuureHtml (fixture)', () => {
       externalId: '21123866',
       url: 'https://huure.nl/huurwoningen/2-kamer-appartement-in-delft-21123866',
       addressRaw: '2 kamer appartement in Delft (2624), Delft', // cards show no street
+      postcode: '2624', // district-only, feeds the matcher's postcode filter
       priceEur: 855,
       surfaceM2: 53,
       bedrooms: 1, // 2 kamers -> 1 bedroom
@@ -47,6 +48,8 @@ describe('parseHuureHtml (fixture)', () => {
     for (const listing of listings) {
       const normalized = normalize(listing);
       expect(normalized.city).toBe('Delft');
+      // The card district survives normalization for the postcode filter.
+      expect(normalized.postcode).toBe(listing.postcode ?? null);
       // No street address on huure cards -> never a shared (colliding) key.
       expect(normalized.dedupeKey).toBe(`u-huure-${listing.externalId}`);
     }
