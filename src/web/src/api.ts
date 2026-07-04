@@ -10,8 +10,10 @@ import type {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
-    headers: { 'content-type': 'application/json' },
     ...init,
+    // Only claim JSON when there is a body: Fastify rejects an empty body
+    // with content-type json (FST_ERR_CTP_EMPTY_JSON_BODY) on DELETE/logout.
+    headers: init?.body ? { 'content-type': 'application/json' } : undefined,
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
