@@ -22,3 +22,6 @@ yarn-error.log*
 .env.local
 
 .DS_Store
+
+# personal scratchpad — was tracked, now local-only (contained credentials at one point)
+todo.txt
